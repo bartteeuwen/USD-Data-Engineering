@@ -1,9 +1,9 @@
 name: USD Data Engineering Pipeline
 
 on:
-  workflow_dispatch: # Allows manual trigger button
+  workflow_dispatch: # Keep the manual button
   schedule:
-    - cron: '0 12 * * *' # Runs daily at 12:00 PM UTC
+    - cron: '0 */2 * * *' # Changed from '0 12 * * *'
 
 jobs:
   run-data-pipeline:
