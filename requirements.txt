@@ -2,3 +2,4 @@ google-cloud-bigquery
 pandas
 requests
 db-dtypes
+flake8
