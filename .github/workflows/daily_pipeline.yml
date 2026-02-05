@@ -1,41 +1,54 @@
 name: USD Data Engineering Pipeline
 
 on:
-  workflow_dispatch: # Keep the manual button
+  workflow_dispatch:
   schedule:
-    - cron: '0 */4 * * *'
+    - cron: '0 */4 * * *' # Runs every 6 hours
 
 jobs:
   run-data-pipeline:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout Code
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      # 2. Setup Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
+      # 3. Install Dependencies (Now includes flake8)
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
 
-      # Authenticate to Google Cloud using the Secret you just added
+      # 4. NEW: Run Linter (Continuous Integration)
+      # This checks for syntax errors (E9, F63) and undefined names (F82).
+      # If this fails, the code is broken and won't proceed.
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      # 5. Authenticate to GCP
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # Run Python (Injecting Adzuna keys from Secrets)
+      # 6. Run Ingestion
       - name: Run Ingestion Script
         env:
           ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
           ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
         run: python ingestion/get_adzuna_jobs.py
 
-      # Run SQL Transformations
+      # 7. Run Transformation
       - name: Run SQL Transformations
         run: |
           bq query --use_legacy_sql=false < transformation/10_match_skills.sql
