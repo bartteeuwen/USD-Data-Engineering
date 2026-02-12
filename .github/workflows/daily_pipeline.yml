@@ -49,7 +49,7 @@ jobs:
         run: |
           bq load --skip_leading_rows=1 --autodetect \
             usd-data-engineering:labor_market.fortune_500_raw \
-            "data/Fortune_500/fortune500_2025_from50pros 2.csv"
+            "data/Fortune_500.csv"
 
       # 7. Run Transformations
       - name: Run SQL Transformations
