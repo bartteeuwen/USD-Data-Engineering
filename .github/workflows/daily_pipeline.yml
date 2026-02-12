@@ -3,7 +3,7 @@ name: USD Data Engineering Pipeline
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */4 * * *' # Runs every 6 hours
+    - cron: "0 */4 * * *" # every 4 hours (UTC)
 
 jobs:
   run-data-pipeline:
@@ -18,21 +18,17 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: "3.9"
 
-      # 3. Install Dependencies (Now includes flake8)
+      # 3. Install Dependencies
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
 
-      # 4. NEW: Run Linter (Continuous Integration)
-      # This checks for syntax errors (E9, F63) and undefined names (F82).
-      # If this fails, the code is broken and won't proceed.
+      # 4. Lint with flake8
       - name: Lint with flake8
         run: |
-          # stop the build if there are Python syntax errors or undefined names
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       # 5. Authenticate to GCP
@@ -41,18 +37,26 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # 6. Run Ingestion
+      # 6. Run Ingestion (Adzuna)
       - name: Run Ingestion Script
         env:
           ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
           ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
         run: python ingestion/get_adzuna_jobs.py
 
-      # 7. Run Transformation
+      # 6b. Load Fortune 500 CSV -> BigQuery (raw table)
+      - name: Load Fortune 500 -> BigQuery (fortune_500_raw)
+        run: |
+          bq load --skip_leading_rows=1 --autodetect \
+            usd-data-engineering:labor_market.fortune_500_raw \
+            "data/Fortune_500/fortune500_2025_from50pros 2.csv"
+
+      # 7. Run Transformations
       - name: Run SQL Transformations
         run: |
-          bq query --use_legacy_sql=false < transformation/10_match_skills.sql
-          bq query --use_legacy_sql=false < transformation/12_enrich_skills_in_demand.sql
-          bq query --use_legacy_sql=false < transformation/15_extract_details.sql
-          bq query --use_legacy_sql=false < transformation/20_aggregate_counts.sql
-          bq query --use_legacy_sql=false < transformation/25_enrich_skill_counts.sql
+          bq query --use_legacy_sql=false < transformation/01_dim_fortune_500.sql
+          bq query --use_legacy_sql=false < transformation/02_match_skills.sql
+          bq query --use_legacy_sql=false < transformation/03_enrich_skills_in_demand.sql
+          bq query --use_legacy_sql=false < transformation/04_extract_details.sql
+          bq query --use_legacy_sql=false < transformation/05_aggregate_counts.sql
+          bq query --use_legacy_sql=false < transformation/06_enrich_skill_counts.sql
