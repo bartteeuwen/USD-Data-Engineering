@@ -7,5 +7,5 @@ SELECT
   TRIM(state) AS state,
   TRIM(website) AS website,
   SAFE_CAST(employees AS INT64) AS employees
-FROM `usd-data-engineering.labor_market.fortune_500_raw`
+FROM `usd-data-engineering.labor_market.fortune_500`
 WHERE company IS NOT NULL;
