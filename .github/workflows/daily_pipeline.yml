@@ -44,12 +44,13 @@ jobs:
           ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
         run: python ingestion/get_adzuna_jobs.py
 
-      # 6b. Load Fortune 500 CSV -> BigQuery (raw table)
-      - name: Load Fortune 500 -> BigQuery (fortune_500_raw)
+      # 6b. Load Fortune 500 CSV -> BigQuery (Direct to dim_fortune_500)
+      - name: Load Fortune 500 -> BigQuery
         run: |
-          bq load --replace --skip_leading_rows=1 --autodetect \
-            usd-data-engineering:labor_market.fortune_500_raw \
-            "data/Fortune_500.csv"
+          bq load --replace --skip_leading_rows=1 \
+            usd-data-engineering:labor_market.dim_fortune_500 \
+            "data/Fortune_500.csv" \
+            rank:INTEGER,company:STRING,industry:STRING,city:STRING,state:STRING,zip:STRING,website:STRING,employees:STRING,revenue:STRING,ceo:STRING
 
       # 7. Run Transformations
       - name: Run SQL Transformations
