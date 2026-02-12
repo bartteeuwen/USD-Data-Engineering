@@ -52,5 +52,7 @@ jobs:
       - name: Run SQL Transformations
         run: |
           bq query --use_legacy_sql=false < transformation/10_match_skills.sql
+          bq query --use_legacy_sql=false < transformation/12_enrich_skills_in_demand.sql
           bq query --use_legacy_sql=false < transformation/15_extract_details.sql
           bq query --use_legacy_sql=false < transformation/20_aggregate_counts.sql
+          bq query --use_legacy_sql=false < transformation/25_enrich_skill_counts.sql
