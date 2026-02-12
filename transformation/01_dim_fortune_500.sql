@@ -1,10 +1,10 @@
 CREATE OR REPLACE TABLE `usd-data-engineering.labor_market.dim_fortune_500` AS
 SELECT
-  TRIM(Company) AS company,
-  LOWER(REGEXP_REPLACE(TRIM(Company), r'[^a-z0-9]+', '')) AS company_key,
-  TRIM(Industry) AS industry,
-  TRIM(City) AS city,
-  TRIM(State) AS state,
-  TRIM(Website) AS website
+  TRIM(string_field_1) AS company, -- This corresponds to the 'Walmart' column
+  LOWER(REGEXP_REPLACE(TRIM(string_field_1), r'[^a-z0-9]+', '')) AS company_key,
+  TRIM(string_field_2) AS industry, -- General Merchandisers
+  TRIM(string_field_3) AS city,     -- Bentonville
+  TRIM(string_field_4) AS state,    -- Arkansas
+  TRIM(string_field_6) AS website   -- walmart.com
 FROM `usd-data-engineering.labor_market.fortune_500_raw`
-WHERE Company IS NOT NULL; -- Check this line specifically!
+WHERE string_field_1 IS NOT NULL;

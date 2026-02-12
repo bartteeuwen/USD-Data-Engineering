@@ -47,7 +47,7 @@ jobs:
       # 6b. Load Fortune 500 CSV -> BigQuery (raw table)
       - name: Load Fortune 500 -> BigQuery (fortune_500_raw)
         run: |
-          bq load --skip_leading_rows=1 --autodetect \
+          bq load --replace --skip_leading_rows=1 --autodetect \
             usd-data-engineering:labor_market.fortune_500_raw \
             "data/Fortune_500.csv"
 
