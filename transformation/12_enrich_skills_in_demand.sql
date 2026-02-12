@@ -1,18 +1,17 @@
-CREATE OR REPLACE TABLE `usd-data-engineering.labor_market.skills_in_demand_enriched` AS
+CREATE OR REPLACE TABLE `usd-data-engineering.labor_market.skills_in_demand` AS
 WITH onet AS (
   SELECT
     LOWER(TRIM(technology_skill)) AS skill_key,
-    MAX(CASE WHEN UPPER(TRIM(hot_technology)) = 'Y' THEN 1 ELSE 0 END) AS is_hot_technology,
-    MAX(CASE WHEN UPPER(TRIM(in_demand)) = 'Y' THEN 1 ELSE 0 END) AS is_in_demand
+    ANY_VALUE(hot_technology) AS hot_technology,
+    ANY_VALUE(in_demand) AS in_demand
   FROM `usd-data-engineering.labor_market.O_Net_Technology_Skills`
-  WHERE technology_skill IS NOT NULL
-  GROUP BY 1
+  WHERE technology_skill IS NOT NULL AND TRIM(technology_skill) != ''
+  GROUP BY skill_key
 )
 SELECT
-  sid.*,
-  (o.skill_key IS NOT NULL) AS is_onet_skill,
-  IFNULL(o.is_hot_technology, 0) AS is_hot_technology,
-  IFNULL(o.is_in_demand, 0) AS is_in_demand
-FROM `usd-data-engineering.labor_market.skills_in_demand` sid
-LEFT JOIN onet o
-  ON LOWER(TRIM(sid.skill_name)) = o.skill_key;
+  s.*,
+  onet.hot_technology,
+  onet.in_demand
+FROM `usd-data-engineering.labor_market.skills_in_demand` s
+LEFT JOIN onet
+  ON LOWER(TRIM(s.skill_name)) = onet.skill_key;
