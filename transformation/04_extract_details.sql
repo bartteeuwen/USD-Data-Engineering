@@ -6,12 +6,11 @@ WITH base AS (
     CASE
       WHEN REGEXP_CONTAINS(LOWER(description), r'remote|work from home') THEN 'Remote'
       WHEN REGEXP_CONTAINS(LOWER(description), r'hybrid') THEN 'Hybrid'
-      ELSE 'Onsite/Unspecified'
+      ELSE 'Onsite'
     END AS work_model,
-    PARSE_TIMESTAMP('%Y-%m-%d %H:%M:%S', ingested_at) AS ingested_at,
-    PARSE_TIMESTAMP('%Y-%m-%d %H:%M:%S', created_at) AS posted_at,
+    DATETIME(PARSE_TIMESTAMP('%Y-%m-%d %H:%M:%S', ingested_at), 'America/Los_Angeles') AS ingested_at,
+    DATETIME(PARSE_TIMESTAMP('%Y-%m-%d %H:%M:%S', created_at), 'America/Los_Angeles') AS posted_at,
     description,
-    -- FIX: Lowercase before regex so letters aren't deleted
     REGEXP_REPLACE(LOWER(TRIM(company)), r'[^a-z0-9]+', '') AS company_key
   FROM `usd-data-engineering.labor_market.raw_job_postings`
 ),
@@ -23,7 +22,6 @@ SELECT
   b.*,
   f.company AS fortune_company,
   f.industry AS fortune_industry,
-  -- Check for existence: if key matches, is_fortune_500 is TRUE
   (f.company_key IS NOT NULL AND b.company_key != '') AS is_fortune_500
 FROM base b
 LEFT JOIN unique_fortune f
