@@ -14,4 +14,8 @@ SELECT
   onet.in_demand
 FROM `usd-data-engineering.labor_market.skill_counts` c
 LEFT JOIN onet
-  ON LOWER(TRIM(c.skill_name)) = onet.skill_key;
+  ON LOWER(TRIM(c.skill_name)) = onet.skill_key
+
+-- Validation
+ASSERT (SELECT COUNT(*) FROM `usd-data-engineering.labor_market.skill_counts`) > 0
+  AS 'Error: Final skill_counts table is empty. Dashboard will be blank.';

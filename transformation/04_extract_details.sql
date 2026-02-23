@@ -25,4 +25,11 @@ SELECT
   (f.company_key IS NOT NULL AND b.company_key != '') AS is_fortune_500
 FROM base b
 LEFT JOIN unique_fortune f
-  ON b.company_key = f.company_key;
+  ON b.company_key = f.company_key
+
+-- Validation
+ASSERT (SELECT COUNT(*) FROM `usd-data-engineering.labor_market.jobs_structured`) > 0
+  AS 'Error: jobs_structured table is empty.';
+
+ASSERT (SELECT COUNT(*) FROM `usd-data-engineering.labor_market.jobs_structured` WHERE id IS NULL) = 0
+  AS 'Data Quality Error: NULL job IDs found in structured layer.';

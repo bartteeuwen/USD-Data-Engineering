@@ -7,4 +7,8 @@ SELECT DISTINCT
   TRIM(state) AS state,
   website
 FROM `usd-data-engineering.labor_market.dim_fortune_500`
-WHERE company IS NOT NULL;
+WHERE company IS NOT NULL
+
+-- Validation
+ASSERT (SELECT COUNT(*) FROM `usd-data-engineering.labor_market.dim_fortune_500`) > 0
+  AS 'Error: dim_fortune_500 table is empty after transformation.';

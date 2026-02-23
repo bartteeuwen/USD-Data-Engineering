@@ -12,4 +12,8 @@ SELECT DISTINCT
     s.technology_skill AS skill_name
 FROM `usd-data-engineering.labor_market.raw_job_postings` j
 CROSS JOIN unique_skills s
-WHERE STRPOS(LOWER(j.description), LOWER(s.technology_skill)) > 0;
+WHERE STRPOS(LOWER(j.description), LOWER(s.technology_skill)) > 0
+
+-- Validation
+ASSERT (SELECT COUNT(*) FROM `usd-data-engineering.labor_market.skills_in_demand`) > 0
+  AS 'Error: No skills were matched. Check cross-join logic in skills_in_demand.';

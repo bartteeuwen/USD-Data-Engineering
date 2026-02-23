@@ -1,46 +1,42 @@
 import logging
+import pandas as pd
 
-# Configure logging to be simple and easy to read
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 def validate_job(job_data):
     """
-    Validates a single job dictionary by checking for the presence of required keys.
-    This is intended to detect API changes where fields might be dropped.
-    
-    Args:
-        job_data (dict): A dictionary representing a single job.
-        
-    Returns:
-        tuple: (is_valid, error_message)
-            - is_valid (bool): True if the job is valid, False otherwise.
-            - error_message (str or None): The error message if invalid, None if valid.
+    Checks for missing keys AND null values in critical fields.
     """
-    # Define fields that must be present in the API response keys.
-    required_keys = [
-        'id', 
-        'title', 
-        'company', 
-        'location', 
-        'description',
-        'salary_min', 
-        'salary_max', 
-        'contract_time', 
-        'category', 
-        'created'
-    ]
+    # 1. Schema Shape: Are the keys present?
+    required_keys = ['id', 'title', 'company', 'location', 'description', 'created']
+    missing_keys = [key for key in required_keys if key not in job_data]
 
-    errors = []
-    
-    # Check if the key exists in the dictionary
-    for key in required_keys:
-        if key not in job_data:
-            errors.append(f"Missing key: '{key}'")
-    
-    # If there are any missing keys, return False and the error message
-    if errors:
-        error_msg = "; ".join(errors)
-        logging.warning(f"Invalid Job Structure: {error_msg} | Job ID: {job_data.get('id', 'Unknown')}")
-        return False, error_msg
-    
+    if missing_keys:
+        return False, f"Missing keys: {', '.join(missing_keys)}"
+
+    # 2. Null Checks: Is the data actually there for critical fields?
+    # We focus on 'id' and 'title' as they are the backbone of the dashboard.
+    if not job_data.get('id') or str(job_data.get('id')).strip() == "":
+        return False, "Critical Field Error: Job ID is null or empty"
+
+    if not job_data.get('title') or str(job_data.get('title')).strip() == "":
+        return False, "Critical Field Error: Job Title is null or empty"
+
     return True, None
+
+def validate_batch(df):
+    """
+    Validation between layers: Checks the 'shape' of the entire dataframe before upload.
+    """
+    # 3. Row Count Validation
+    if df.empty:
+        logging.warning("Validation Alert: Batch is empty. No new rows to process.")
+        return False
+
+    # 4. Critical Field Null Check (Dataframe level)
+    if df['id'].isnull().any():
+        logging.error("Validation Failed: Found NULL values in the ID column.")
+        return False
+
+    logging.info(f"Validation Passed: {len(df)} rows are ready for ingestion.")
+    return True
