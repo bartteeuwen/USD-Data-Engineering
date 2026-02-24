@@ -84,24 +84,24 @@ def ingest_jobs():
     existing_ids = get_existing_ids(client, table_ref)
     unique_df = new_df[~new_df['id'].isin(existing_ids)]
 
+    if unique_df.empty:
+        print("No new jobs found. All fetched jobs were duplicates. Exiting gracefully.")
+        return
+
     # VALIDATION
     print("Running batch validation...")
     if not validate_batch(unique_df):
-        # We raise a ValueError here so GitHub Actions sees the failure
         raise ValueError("Data Validation Failed: The batch contains null IDs or is improperly formatted.")
 
     # UPLOAD
-    if unique_df.empty:
-        print("No new jobs found. All 20 jobs were duplicates.")
-    else:
-        print(f"Found {len(unique_df)} NEW jobs passing validation.")
-        job_config = bigquery.LoadJobConfig(
-            write_disposition="WRITE_APPEND",
-            schema_update_options=[bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION]
-        )
-        load_job = client.load_table_from_dataframe(unique_df, table_ref, job_config=job_config)
-        load_job.result()
-        print(f"Success! Uploaded {len(unique_df)} rows.")
+    print(f"Found {len(unique_df)} NEW jobs passing validation.")
+    job_config = bigquery.LoadJobConfig(
+        write_disposition="WRITE_APPEND",
+        schema_update_options=[bigquery.SchemaUpdateOption.ALLOW_FIELD_ADDITION]
+    )
+    load_job = client.load_table_from_dataframe(unique_df, table_ref, job_config=job_config)
+    load_job.result()
+    print(f"Success! Uploaded {len(unique_df)} rows.")
 
 if __name__ == "__main__":
     ingest_jobs()
