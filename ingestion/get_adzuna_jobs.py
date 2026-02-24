@@ -7,7 +7,7 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from ingestion.validation import validate_batch
+from validation import validate_batch
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 KEY_PATH = os.path.join(CURRENT_DIR, "..", "keys", "gcp-key.json")
