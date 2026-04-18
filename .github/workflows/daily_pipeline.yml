@@ -44,16 +44,16 @@ jobs:
 
       - name: Load Fortune 500 -> BigQuery
         run: |
-          bq load --replace --skip_leading_rows=1 \
-            labor_market.dim_fortune_500 \
-            data/Fortune_500.csv \
-            rank:INTEGER,company:STRING,industry:STRING,city:STRING,state:STRING,zip:STRING,website:STRING,employees:STRING,revenue:STRING,ceo:STRING
+          bq --location=US load --replace --skip_leading_rows=1 \
+          labor_market.dim_fortune_500 \
+          data/Fortune_500.csv \
+          rank:INTEGER,company:STRING,industry:STRING,city:STRING,state:STRING,zip:STRING,website:STRING,employees:STRING,revenue:STRING,ceo:STRING
 
       - name: Run SQL Transformations
         run: |
-          bq query --use_legacy_sql=false < transformation/01_dim_fortune_500.sql
-          bq query --use_legacy_sql=false < transformation/02_match_skills.sql
-          bq query --use_legacy_sql=false < transformation/03_enrich_skills_in_demand.sql
-          bq query --use_legacy_sql=false < transformation/04_extract_details.sql
-          bq query --use_legacy_sql=false < transformation/05_aggregate_counts.sql
-          bq query --use_legacy_sql=false < transformation/06_enrich_skill_counts.sql
+         bq --location=US query --use_legacy_sql=false < transformation/01_dim_fortune_500.sql
+         bq --location=US query --use_legacy_sql=false < transformation/02_match_skills.sql
+         bq --location=US query --use_legacy_sql=false < transformation/03_enrich_skills_in_demand.sql
+         bq --location=US query --use_legacy_sql=false < transformation/04_extract_details.sql
+         bq --location=US query --use_legacy_sql=false < transformation/05_aggregate_counts.sql
+         bq --location=US query --use_legacy_sql=false < transformation/06_enrich_skill_counts.sql
