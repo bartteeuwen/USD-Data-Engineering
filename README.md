@@ -20,30 +20,32 @@ This project implements a production-style **ELT pipeline** that monitors the U.
 The pipeline runs automatically every 4 hours and can also be triggered manually.
 
 It enables analysis of:
-- Most frequently requested skills
-- Trending skills (7-day window)
-- Government-defined *Hot Technology* and *In Demand* flags
-- Market demand over time
+
+- Most frequently requested skills  
+- Trending skills (7-day window)  
+- Government-defined *Hot Technology* indicators  
+- O*NET-based skill enrichment  
+- Market demand over time  
 
 ---
 
 ## Architecture
 
-This pipeline follows a clean **ELT Medallion Architecture**:
+This pipeline follows a clean **ELT Medallion Architecture** with a normalized reference-data layer for schema stability.
 
-```
+```text
 Adzuna API
-    ↓
+   ↓
 Python Ingestion
-    ↓
-BigQuery (Raw Layer)
-    ↓
+   ↓
+BigQuery Raw Layer
+   ↓
 SQL Transformations
-    ↓
-Skill Enrichment (O*NET)
-    ↓
+   ↓
+O*NET Reference + Normalization View
+   ↓
 Aggregation Layer
-    ↓
+   ↓
 Analytics / Dashboard
 ```
 
@@ -62,19 +64,21 @@ Stores original job data from Adzuna (deduplicated).
 `labor_market.jobs_structured`
 
 Cleans and standardizes:
-- Salaries
-- Contract type
-- Work model (Remote / Hybrid / Onsite)
-- Timestamps
+
+- Salaries  
+- Contract type  
+- Work model (Remote / Hybrid / Onsite)  
+- Timestamps  
 
 ---
 
 ### Skill Matching Layer
 `labor_market.skills_in_demand`
 
-Matches job descriptions against O*NET skills and flags:
-- `hot_technology`
-- `in_demand`
+Matches job descriptions against O*NET skills and enriches records with:
+
+- `hot_technology`  
+- `in_demand` (nullable compatibility field)  
 
 ---
 
@@ -82,15 +86,47 @@ Matches job descriptions against O*NET skills and flags:
 `labor_market.skill_counts`
 
 Provides:
-- Total skill mentions
-- Mentions in last 7 days
-- O*NET enrichment indicators
+
+- Total skill mentions  
+- Mentions in last 7 days  
+- O*NET enrichment indicators  
+
+---
+
+## Reference Data Dependencies
+
+This pipeline relies on the following reference assets:
+
+- `labor_market.O_Net_Technology_Skills`
+- `labor_market.O_Net_Technology_Skills_normalized`
+
+The normalized view standardizes source field names (for example:
+
+`Title → technology_skill`
+
+) and isolates downstream transformations from source schema changes.
+
+This compatibility layer improves resilience when upstream reference data changes.
+
+---
+
+## Operational Resilience
+
+Pipeline includes safeguards for:
+
+- Explicit BigQuery location configuration (`US`)
+- GitHub Actions runtime compatibility upgrades
+- Schema normalization for external reference data
+- SQL assertions for transformation validation
+- Deduplication logic during ingestion
+
+These controls improve reliability in scheduled CI/CD execution.
 
 ---
 
 ## Repository Structure
 
-```
+```text
 .github/workflows/      # GitHub Actions orchestration
 ingestion/              # Python ingestion scripts
 transformation/         # SQL ELT logic
@@ -107,7 +143,8 @@ This pipeline runs via **GitHub Actions**.
 
 ### Required Repository Secrets
 
-Go to:  
+Go to:
+
 **Settings → Secrets and Variables → Actions**
 
 Add:
@@ -142,18 +179,18 @@ This pipeline supports a hiring manager who lacks access to proprietary labor an
 
 It enables:
 
-- Identifying high-demand technical skills
-- Comparing skill demand across job categories
-- Tracking emerging technologies
-- Improving job description targeting
+- Identifying high-demand technical skills  
+- Comparing skill demand across job categories  
+- Tracking emerging technologies  
+- Improving job description targeting  
 
 ---
 
 ## Tech Stack
 
-- Python 3.9
-- Google BigQuery
-- SQL (StandardSQL)
-- GitHub Actions
-- O*NET 29.0 Dataset
+- Python 3.9  
+- Google BigQuery  
+- SQL (StandardSQL)  
+- GitHub Actions  
+- O*NET 29.0 Dataset  
 - Adzuna API
