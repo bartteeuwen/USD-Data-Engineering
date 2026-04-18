@@ -1,196 +1,129 @@
 # USD Data Engineering – Labor Market ELT Pipeline
 
 ![Build Status](https://github.com/bartteeuwen/USD-Data-Engineering/actions/workflows/daily_pipeline.yml/badge.svg)
-![Python](https://img.shields.io/badge/python-3.9-blue)
-![BigQuery](https://img.shields.io/badge/Google_Cloud-BigQuery-green)
-![Architecture](https://img.shields.io/badge/Architecture-ELT-orange)
-
----
 
 ## Overview
 
-This project implements a production-style **ELT pipeline** that monitors the U.S. technical job market using:
+This project is an automated ELT pipeline that monitors the U.S. technical job market using:
 
-- **Adzuna API** (job postings)
-- **Google BigQuery** (data warehouse)
-- **O*NET Technology Skills Taxonomy** (government skill reference)
-- **GitHub Actions** (automation + scheduling)
-- **SQL transformations** (primary business logic)
+- Adzuna API for job postings  
+- Google BigQuery for storage and transformations  
+- O*NET Technology Skills data for skill enrichment  
+- GitHub Actions for scheduling and automation  
 
-The pipeline runs automatically every 4 hours and can also be triggered manually.
+The pipeline runs every 4 hours (or manually) and helps analyze:
 
-It enables analysis of:
-
-- Most frequently requested skills  
-- Trending skills (7-day window)  
-- Government-defined *Hot Technology* indicators  
-- O*NET-based skill enrichment  
-- Market demand over time  
-
----
+- Most requested technical skills  
+- Trending skills over time  
+- Hot technologies from O*NET  
+- Labor market demand signals  
 
 ## Architecture
-
-This pipeline follows a clean **ELT Medallion Architecture** with a normalized reference-data layer for schema stability.
 
 ```text
 Adzuna API
    ↓
-Python Ingestion
+Python ingestion
    ↓
-BigQuery Raw Layer
+BigQuery raw tables
    ↓
-SQL Transformations
+SQL transformations
    ↓
-O*NET Reference + Normalization View
+O*NET enrichment
    ↓
-Aggregation Layer
+Aggregated tables
    ↓
-Analytics / Dashboard
+Looker Studio dashboard
 ```
 
----
+## Core Tables
 
-## Data Layers
-
-### Raw Layer (Bronze)
+### Raw
 `labor_market.raw_job_postings`
 
-Stores original job data from Adzuna (deduplicated).
+Raw job postings from Adzuna.
 
----
-
-### Structured Layer (Silver)
+### Structured
 `labor_market.jobs_structured`
 
-Cleans and standardizes:
+Standardized job records with:
 
-- Salaries  
+- Salary fields  
+- Work model (remote / hybrid / onsite)  
 - Contract type  
-- Work model (Remote / Hybrid / Onsite)  
-- Timestamps  
+- Fortune 500 matching  
 
----
-
-### Skill Matching Layer
+### Skills
 `labor_market.skills_in_demand`
 
-Matches job descriptions against O*NET skills and enriches records with:
+Matches job descriptions to O*NET skills and adds:
 
-- `hot_technology`  
-- `in_demand` (nullable compatibility field)  
+- `hot_technology`
+- `in_demand` (currently nullable)
 
----
-
-### Aggregation Layer (Gold)
+### Aggregated
 `labor_market.skill_counts`
 
-Provides:
+Used by the dashboard for:
 
-- Total skill mentions  
-- Mentions in last 7 days  
-- O*NET enrichment indicators  
+- Skill mention counts  
+- 7-day trend counts  
+- O*NET indicators  
 
----
+## O*NET Reference Data
 
-## Reference Data Dependencies
+The pipeline uses:
 
-This pipeline relies on the following reference assets:
+- `O_Net_Technology_Skills`
+- `O_Net_Technology_Skills_normalized`
 
-- `labor_market.O_Net_Technology_Skills`
-- `labor_market.O_Net_Technology_Skills_normalized`
+The normalized view standardizes source field names and protects downstream SQL from source schema changes.
 
-The normalized view standardizes source field names (for example:
+## Reliability Notes
 
-`Title → technology_skill`
+The pipeline includes:
 
-) and isolates downstream transformations from source schema changes.
-
-This compatibility layer improves resilience when upstream reference data changes.
-
----
-
-## Operational Resilience
-
-Pipeline includes safeguards for:
-
-- Explicit BigQuery location configuration (`US`)
-- GitHub Actions runtime compatibility upgrades
-- Schema normalization for external reference data
-- SQL assertions for transformation validation
-- Deduplication logic during ingestion
-
-These controls improve reliability in scheduled CI/CD execution.
-
----
+- BigQuery location set to `US`
+- SQL assertions for validation
+- Deduplication during ingestion
+- Schema normalization for reference data
+- GitHub Actions scheduling
 
 ## Repository Structure
 
 ```text
-.github/workflows/      # GitHub Actions orchestration
-ingestion/              # Python ingestion scripts
-transformation/         # SQL ELT logic
-data/                   # O*NET skill files
+.github/workflows/
+ingestion/
+transformation/
+data/
 requirements.txt
 README.md
 ```
 
----
+## Required Secrets
 
-## Deployment
-
-This pipeline runs via **GitHub Actions**.
-
-### Required Repository Secrets
-
-Go to:
+Configure these in:
 
 **Settings → Secrets and Variables → Actions**
 
-Add:
+- GCP_SA_KEY  
+- ADZUNA_APP_ID  
+- ADZUNA_APP_KEY  
 
-| Secret | Description |
-|--------|-------------|
-| GCP_SA_KEY | Google Cloud Service Account JSON |
-| ADZUNA_APP_ID | Adzuna API ID |
-| ADZUNA_APP_KEY | Adzuna API Key |
+## Dashboard Use Case
 
----
+This project supports labor market analysis such as:
 
-## Monitoring
-
-Navigate to:
-
-**GitHub → Actions → USD Data Engineering Pipeline**
-
-| Status | Meaning |
-|--------|---------|
-| ✅ Green | Successful run |
-| ❌ Red | Failed run |
-| 🟡 Yellow | Running |
-
-Manual runs are supported via the **Run Workflow** button.
-
----
-
-## Business Use Case
-
-This pipeline supports a hiring manager who lacks access to proprietary labor analytics tools.
-
-It enables:
-
-- Identifying high-demand technical skills  
-- Comparing skill demand across job categories  
-- Tracking emerging technologies  
+- Tracking high-demand skills  
+- Monitoring emerging technologies  
 - Improving job description targeting  
-
----
+- Exploring hiring demand trends  
 
 ## Tech Stack
 
-- Python 3.9  
-- Google BigQuery  
-- SQL (StandardSQL)  
+- Python  
+- BigQuery  
+- SQL  
 - GitHub Actions  
-- O*NET 29.0 Dataset  
-- Adzuna API
+- Looker Studio  
+- O*NET  
