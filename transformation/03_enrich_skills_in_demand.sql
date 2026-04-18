@@ -4,7 +4,7 @@ WITH onet AS (
     LOWER(TRIM(technology_skill)) AS skill_key,
     ANY_VALUE(hot_technology) AS hot_technology,
     ANY_VALUE(in_demand) AS in_demand
-  FROM `usd-data-engineering.labor_market.O_Net_Technology_Skills`
+  FROM `usd-data-engineering.labor_market.O_Net_Technology_Skills_normalized`
   WHERE technology_skill IS NOT NULL AND TRIM(technology_skill) != ''
   GROUP BY skill_key
 )
